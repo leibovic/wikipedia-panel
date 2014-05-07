@@ -24,7 +24,7 @@ XPCOMUtils.defineLazyGetter(this, "FeedHelper", function() {
   return win["FeedHelper"];
 });
 
-var Feeds = ["potd", "featured", "onthisday"];
+var Feeds = ["potd", "featured", "onthisday", "nearby"];
 
 function getFeed() {
   try {
@@ -51,15 +51,21 @@ function optionsCallback() {
 }
 
 function refreshDataset() {
-  let domain = Strings.GetStringFromName("domain");
+  let feed = getFeed();
+  if (feed == "nearby") {
+    saveNearbyItems();
+  } else {
+    saveFeedItems(feed);
+  }
+}
 
-  let feedUrl = [
-    "http://",
-    domain,
-    "/w/api.php?action=featuredfeed&feed=",
-    getFeed()
-  ].join("");
+function saveFeedItems(feed) {
+  let params = {
+    action: "featuredfeed",
+    feed: feed
+  };
 
+  let feedUrl = formatQueryUrl(params);
   FeedHelper.parseFeed(feedUrl, function(parsedFeed) {
     let items = FeedHelper.feedToItems(parsedFeed).map(function(item){
       // Image URLs don't include a scheme
@@ -73,6 +79,74 @@ function refreshDataset() {
       yield storage.save(items);
     }).then(null, e => Cu.reportError("Error saving data to HomeProvider: " + e));
   });
+}
+
+function saveNearbyItems() {
+  let win = Services.wm.getMostRecentWindow("navigator:browser");
+  win.navigator.geolocation.getCurrentPosition(function (location){
+    let params = {
+      action: "query",
+      format: "json",
+      colimit: "max",
+      prop: "pageimages|coordinates",
+      pithumbsize: 180,
+      pilimit: 50,
+      generator: "geosearch",
+      ggsradius: 10000,
+      ggsnamespace: 0,
+      ggslimit: 50,
+      ggscoord: location.coords.latitude + "|" + location.coords.longitude
+    };
+
+    let queryUrl = formatQueryUrl(params);
+    getRequest(queryUrl, function (response) {
+      let items = [];
+      let pages = JSON.parse(response).query.pages;
+      for (p in pages) {
+        let page = pages[p];
+        items.push({
+          url: "http://" + Strings.GetStringFromName("domain")  + "/wiki/" + encodeURIComponent(page.title),
+          title: page.title,
+          image_url: page.thumbnail ? page.thumbnail.source : undefined
+        });
+      }
+
+      Task.spawn(function() {
+        let storage = HomeProvider.getStorage(DATASET_ID);
+        yield storage.deleteAll();
+        yield storage.save(items);
+      }).then(null, e => Cu.reportError("Error saving data to HomeProvider: " + e));
+    });
+  });
+}
+
+function getRequest(url, callback) {
+  let xhr = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"].createInstance(Ci.nsIXMLHttpRequest);
+  try {
+    xhr.open("GET", url, true);
+  } catch (e) {
+    Cu.reportError("Error opening request to " + url + ": " + e);
+    return;
+  }
+  xhr.onerror = function onerror(e) {
+    Cu.reportError("Error making request to " + url + ": " + e.error);
+  };
+  xhr.onload = function onload(event) {
+    if (xhr.status === 200) {
+      callback(xhr.responseText);
+    } else {
+      Cu.reportError("Request to " + url + " returned status " + xhr.status);
+    }
+  };
+  xhr.send(null);
+}
+
+function formatQueryUrl(params) {
+  let str = [];
+  for (let p in params) {
+    str.push(encodeURIComponent(p) + "=" + encodeURIComponent(params[p]));
+  }
+  return "http://" + Strings.GetStringFromName("domain") + "/w/api.php?" + str.join("&");
 }
 
 function deleteDataset() {
