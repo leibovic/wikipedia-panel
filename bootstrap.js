@@ -14,6 +14,11 @@ const DATASET_ID = "wikipedia.dataset@margaretleibovic.com";
 
 const FEED_PREF = "wikipediaPanel.feed";
 
+// In meters
+const EARTH_RADIUS = 6371 * 1000;
+
+const DEFAULT_IMAGE = "http://bits.wikimedia.org/apple-touch/wikipedia.png";
+
 XPCOMUtils.defineLazyGetter(this, "Strings", function() {
   return Services.strings.createBundle("chrome://wikipediapanel/locale/wikipediapanel.properties");
 });
@@ -62,6 +67,11 @@ function refreshDataset() {
 function saveNearbyItems() {
   let win = Services.wm.getMostRecentWindow("navigator:browser");
   win.navigator.geolocation.getCurrentPosition(function (location){
+    let userPoint = {
+      lat: location.coords.latitude,
+      lon: location.coords.longitude
+    }
+
     let params = {
       action: "query",
       format: "json",
@@ -73,7 +83,7 @@ function saveNearbyItems() {
       ggsradius: 10000,
       ggsnamespace: 0,
       ggslimit: 50,
-      ggscoord: location.coords.latitude + "|" + location.coords.longitude
+      ggscoord: userPoint.lat + "|" + userPoint.lon
     };
 
     let queryUrl = formatQueryUrl(params);
@@ -85,7 +95,8 @@ function saveNearbyItems() {
         items.push({
           url: "http://" + Strings.GetStringFromName("domain")  + "/wiki/" + encodeURIComponent(page.title),
           title: page.title,
-          image_url: page.thumbnail ? page.thumbnail.source : undefined
+          image_url: page.thumbnail ? page.thumbnail.source : DEFAULT_IMAGE,
+          description: formatDistance(userPoint, page.coordinates[0])
         });
       }
 
@@ -147,6 +158,27 @@ function formatQueryUrl(params) {
     str.push(encodeURIComponent(p) + "=" + encodeURIComponent(params[p]));
   }
   return "http://" + Strings.GetStringFromName("domain") + "/w/api.php?" + str.join("&");
+}
+
+// Logic from http://www.movable-type.co.uk/scripts/latlong.html
+function formatDistance(p1, p2) {
+  function toRadians(n) {
+    return n * Math.PI / 180;
+  }
+
+  let lat1 = toRadians(p1.lat);
+  let lat2 = toRadians(p2.lat);
+  let dlat = toRadians(p2.lat - p1.lat);
+  let dlon = toRadians(p2.lon - p1.lon);
+
+  let a = Math.sin(dlat/2) * Math.sin(dlat/2) +
+          Math.cos(lat1) * Math.cos(lat2) *
+          Math.sin(dlon/2) * Math.sin(dlon/2);
+  let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+  // Round to the nearest meter
+  let d = Math.round(EARTH_RADIUS * c);
+  return d + " m";
 }
 
 function deleteDataset() {
