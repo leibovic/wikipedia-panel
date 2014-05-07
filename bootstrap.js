@@ -59,28 +59,6 @@ function refreshDataset() {
   }
 }
 
-function saveFeedItems(feed) {
-  let params = {
-    action: "featuredfeed",
-    feed: feed
-  };
-
-  let feedUrl = formatQueryUrl(params);
-  FeedHelper.parseFeed(feedUrl, function(parsedFeed) {
-    let items = FeedHelper.feedToItems(parsedFeed).map(function(item){
-      // Image URLs don't include a scheme
-      item.image_url = "http:" + item.image_url;
-      return item;
-    });
-
-    Task.spawn(function() {
-      let storage = HomeProvider.getStorage(DATASET_ID);
-      yield storage.deleteAll();
-      yield storage.save(items);
-    }).then(null, e => Cu.reportError("Error saving data to HomeProvider: " + e));
-  });
-}
-
 function saveNearbyItems() {
   let win = Services.wm.getMostRecentWindow("navigator:browser");
   win.navigator.geolocation.getCurrentPosition(function (location){
@@ -117,6 +95,28 @@ function saveNearbyItems() {
         yield storage.save(items);
       }).then(null, e => Cu.reportError("Error saving data to HomeProvider: " + e));
     });
+  });
+}
+
+function saveFeedItems(feed) {
+  let params = {
+    action: "featuredfeed",
+    feed: feed
+  };
+
+  let feedUrl = formatQueryUrl(params);
+  FeedHelper.parseFeed(feedUrl, function(parsedFeed) {
+    let items = FeedHelper.feedToItems(parsedFeed).map(function(item){
+      // Image URLs don't include a scheme
+      item.image_url = "http:" + item.image_url;
+      return item;
+    });
+
+    Task.spawn(function() {
+      let storage = HomeProvider.getStorage(DATASET_ID);
+      yield storage.deleteAll();
+      yield storage.save(items);
+    }).then(null, e => Cu.reportError("Error saving data to HomeProvider: " + e));
   });
 }
 
