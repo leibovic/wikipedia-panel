@@ -3,7 +3,6 @@
 
     <Description about="urn:mozilla:install-manifest">
         <em:id>wikipedia.panel@margaretleibovic.com</em:id>
-        <em:unpack>true</em:unpack>
         <em:type>2</em:type>
         <em:name>Wikipedia Panel</em:name>
         <em:version>0.2</em:version>
