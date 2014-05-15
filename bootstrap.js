@@ -123,6 +123,10 @@ function saveFeedItems(feed) {
       return item;
     });
 
+    // Wikipedia sorts the feed from the earliest date to the latest, which is
+    // backwards from what is expected, so we reverse the feed here.
+    items.reverse();
+
     Task.spawn(function() {
       let storage = HomeProvider.getStorage(DATASET_ID);
       yield storage.deleteAll();
