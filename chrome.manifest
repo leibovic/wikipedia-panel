@@ -1,2 +1,3 @@
 content    wikipediapanel          content/
 locale     wikipediapanel en-US    locale/en-US/
+locale     wikipediapanel ko       locale/ko/
