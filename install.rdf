@@ -5,7 +5,7 @@
         <em:id>wikipedia.panel@margaretleibovic.com</em:id>
         <em:type>2</em:type>
         <em:name>Wikipedia Panel</em:name>
-        <em:version>0.3</em:version>
+        <em:version>0.4</em:version>
         <em:bootstrap>true</em:bootstrap>
         <em:description>Adds a Wikipedia panel to your Firefox for Android homepage.</em:description>
         <em:creator>Margaret Leibovic</em:creator>
