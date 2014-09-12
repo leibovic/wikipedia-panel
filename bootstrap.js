@@ -13,10 +13,10 @@ const PANEL_ID = "wikipedia.panel@margaretleibovic.com";
 const DATASET_ID = "wikipedia.dataset@margaretleibovic.com";
 
 // Pref used to persist feed panel data between app runs.
-const FEEDS_PREF = "extensions.wikipediaPanel.feed";
+const FEED_PREF = "extensions.wikipediaPanel.feed";
 
 // Old pref that may need to be migrated.
-const FEEDS_PREF_OLD = "wikipediaPanel.feed";
+const FEED_PREF_OLD = "wikipediaPanel.feed";
 
 // In meters
 const EARTH_RADIUS = 6371 * 1000;
@@ -238,9 +238,9 @@ function startup(data, reason) {
     case ADDON_UPGRADE:
       // Migrate the feeds pref if it exists.
       try {
-        let prefValue = Services.prefs.getCharPref(FEEDS_PREF_OLD);
-        Services.prefs.setCharPref(FEEDS_PREF, prefValue);
-        Services.prefs.clearUserPref(FEEDS_PREF_OLD);
+        let prefValue = Services.prefs.getCharPref(FEED_PREF_OLD);
+        Services.prefs.setCharPref(FEED_PREF, prefValue);
+        Services.prefs.clearUserPref(FEED_PREF_OLD);
       } catch (e) {}
       // fall through
     case ADDON_DOWNGRADE:
